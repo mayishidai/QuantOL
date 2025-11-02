@@ -82,7 +82,7 @@ jobs:
             --cache-to type=local,dest=/tmp/.buildx-cache-new \
             --push \
             --progress=plain \
-            -f ./Dockerfile .
+            -f ./Dockerfile.streamlit .
         
         # 更新缓存
       - name: Move cache
