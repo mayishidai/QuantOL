@@ -38,7 +38,7 @@
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/your-username/QuantOL.git
+git clone https://github.com/FAKE0704/QuantOL.git
 cd QuantOL
 ```
 
@@ -51,6 +51,9 @@ pip install -r requirements.txt
 ```bash
 # 使用Docker快速部署数据库
 docker-compose up -d
+
+# 使用本地版Postgresql
+参见文档@LOCAL_POSTGRES_SETUP.md
 ```
 
 4. **启动应用**
@@ -251,5 +254,6 @@ limitations under the License.
 
 
 ⭐ 如果这个项目对您有帮助，请给我一个 Star！
+
 
 

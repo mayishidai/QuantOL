@@ -57,7 +57,7 @@ async def show_history_page():
             "搜索并选择股票",
             options=st.session_state.stock_cache,
             format_func=lambda x: f"{x[0]} {x[1]}",
-            help="输入股票代码或名称进行筛选"
+            help="输入股票代码或名称进行筛选。注意：不需要选择指数标的，部分股票可能缺少历史数据，建议选择个股进行分析"
         )
     with col2:
         if st.button("🔄 刷新列表", help="点击手动更新股票列表"):
@@ -96,7 +96,7 @@ async def show_history_page():
         end_date = pd.to_datetime(end_date).strftime('%Y-%m-%d')
 
         if st.button("查看历史行情"):
-            from components.progress import show_progress
+            from src.components.progress import show_progress
             progress, status = show_progress("history_data", "正在获取数据...")
             
             # 生成包含完整信息的缓存键
