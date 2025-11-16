@@ -32,6 +32,8 @@ MANIFEST
 *.manifest
 *.spec
 
+
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -209,6 +211,9 @@ $RECYCLE.BIN/
 # 临时文件
 *.tmp*
 *.temp
+.DS_Store
+.spec-workflow/
+
 
 # 日志文件
 *.log
@@ -219,6 +224,11 @@ src/core/logs/
 *.db
 *.sqlite
 *.sqlite3
+
+# Tushare缓存文件
+data/tushare/
+*.pkl
+!src/**/*.pkl  # 保留代码中的pkl文件
 
 # Streamlit 敏感配置
 .streamlit/secrets.toml

@@ -2,6 +2,7 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue.svg)](https://www.postgresql.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-3.0+-green.svg)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 一个基于事件驱动架构的专业量化交易系统，提供完整的策略开发、回测分析和交易执行功能。
@@ -10,7 +11,8 @@
 
 ### 🚀 核心功能
 - **事件驱动架构** - 基于消息总线的松耦合设计
-- **多数据源支持** - Baostock、AkShare等数据源集成
+- **双数据库模式** - 支持SQLite(快速体验)和PostgreSQL(生产环境)
+- **多数据源支持** - Tushare、Baostock、AkShare等数据源集成
 - **策略回测引擎** - 支持多股票组合回测和规则组管理
 - **风险控制系统** - 完整的资金管理和风险控制机制
 - **实时可视化** - 基于Streamlit的交互式界面
@@ -31,10 +33,19 @@
 
 ### 环境要求
 - Python 3.9+
-- PostgreSQL 13+
 - Streamlit 1.28+
+- **数据库**: SQLite 3.0+ (默认) 或 PostgreSQL 13+ (可选)
 
-### 安装步骤
+### 🗄️ 数据库模式选择
+
+本项目支持两种数据库模式：
+
+| 模式 | 适用场景 | 优点 | 缺点 |
+|------|----------|------|------|
+| **SQLite** (默认) | 快速体验、开发测试 | 零配置、开箱即用 | 性能有限、不适合大数据量 |
+| **PostgreSQL** | 生产环境、大数据处理 | 高性能、高并发 | 需要额外安装配置 |
+
+### 📦 安装步骤
 
 1. **克隆项目**
 ```bash
@@ -47,47 +58,148 @@ cd QuantOL
 pip install -r requirements.txt
 ```
 
-3. **数据库配置**
+3. **配置环境**
 ```bash
-# 使用Docker快速部署数据库
-docker-compose up -d
-
-# 使用本地版Postgresql
-参见文档@LOCAL_POSTGRES_SETUP.md
+# 复制配置文件
+cp .env.example .env
 ```
 
 4. **启动应用**
 ```bash
+# 默认使用SQLite模式，无需额外配置
 streamlit run main.py
 ```
 
-### 配置说明
+### 🔄 数据库模式切换
 
-#### 环境变量配置
-复制 `.env.example` 为 `.env` 并配置数据库连接信息：
-
+#### 方式一：命令行切换
 ```bash
-cp .env.example .env
+# 切换到SQLite模式（默认）
+python -m src.cli.database_switch switch --type sqlite
+
+# 切换到PostgreSQL模式
+python -m src.cli.database_switch switch --type postgresql
 ```
 
+#### 方式二：Web界面切换
+1. 启动应用后，在左侧导航栏选择"系统设置-数据库设置"
+2. 点击相应按钮切换数据库类型
+3. 系统会自动处理配置和初始化
+
+#### 方式三：手动配置
 编辑 `.env` 文件：
 ```env
-# 数据库配置
+# 选择数据库类型 (sqlite/postgresql)
+DATABASE_TYPE=sqlite
+
+# SQLite配置
+SQLITE_DB_PATH=./data/quantdb.sqlite
+
+# PostgreSQL配置 (当使用PostgreSQL时)
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=quantdb
 DB_USER=quant
-DB_PASSWORD=your_secure_password_here
-
-# 连接池配置
-DB_MAX_POOL_SIZE=15
-DB_QUERY_TIMEOUT=60
+DB_PASSWORD=your_password_here
 ```
 
+### 🐘 PostgreSQL模式配置（可选）
+
+如果需要使用PostgreSQL模式，请按以下步骤配置：
+
+#### 使用Docker（推荐）
+```bash
+# 启动PostgreSQL容器
+docker-compose up -d
+
+# 验证数据库运行状态
+docker-compose ps
+```
+
+#### 使用本地PostgreSQL
+```bash
+# macOS (使用Homebrew)
+brew install postgresql
+brew services start postgresql
+
+# 创建数据库和用户
+createdb quantdb
+createuser quant
+psql -d postgres -c "ALTER USER quant PASSWORD 'your_password';"
+psql -d quantdb -c "GRANT ALL PRIVILEGES ON DATABASE quantdb TO quant;"
+
+# 参见详细文档: LOCAL_POSTGRES_SETUP.md
+```
+
+### 🛠️ 常用命令
+
+#### 数据库管理
+```bash
+# 查看当前数据库状态
+python -m src.cli.database_switch status
+
+# 重新初始化数据库
+python -m src.cli.database_switch init
+
+# 切换数据库类型
+python -m src.cli.database_switch switch --type sqlite
+python -m src.cli.database_switch switch --type postgresql
+```
+
+#### 应用管理
+```bash
+# 启动应用
+streamlit run main.py
+
+# 指定端口启动
+streamlit run main.py --server.port 8501
+
+# 允许外部访问
+streamlit run main.py --server.address 0.0.0.0
+```
+
+### ⚠️ 注意事项
+
+- **SQLite模式**: 数据存储在本地文件中，适合开发测试和个人使用
+- **PostgreSQL模式**: 需要数据库服务运行，适合生产环境和团队使用
+- **数据迁移**: 两种模式间的数据需要手动迁移
+- **性能差异**: PostgreSQL在处理大量数据时性能更优
+
+### 🔧 故障排除
+
+#### 常见问题
+1. **数据库连接失败**: 检查数据库服务状态和配置信息
+2. **SQLite权限错误**: 确保数据目录有写入权限
+3. **PostgreSQL连接超时**: 检查防火墙和网络配置
+
+#### 获取帮助
+- 查看应用日志获取详细错误信息
+- 使用"数据库设置"页面进行连接测试
+- 检查配置文件格式和参数
+
 #### 数据源配置
-系统支持多种数据源，默认使用Baostock：
-- Baostock: 免费A股数据
-- AkShare: 多市场数据源
+系统支持多种数据源，可通过系统设置页面灵活切换：
+
+| 数据源 | 特点 | 配置要求 | 适用场景 |
+|--------|------|----------|----------|
+| **Tushare** | 专业级金融数据接口 | 需要注册获取Token | 生产环境、专业分析 |
+| **Baostock** | 免费开源证券数据平台 | 无需配置 | 学习测试、快速体验 |
+| **AkShare** | 多市场数据源 | 可选API密钥 | 多市场数据获取 |
+
+##### Tushare配置 (推荐)
+1. 访问 [Tushare官网](https://tushare.pro/register?reg=693641) 注册账户
+2. 在个人中心获取API Token
+3. 在系统设置 → 数据源配置中输入Token
+4. 或在 `.env` 文件中配置：
+   ```bash
+   TUSHARE_TOKEN=your_32_character_token_here
+   SELECTED_DATA_SOURCE=Tushare
+   ```
+
+##### Baostock配置 (默认)
+- 无需任何配置，开箱即用
+- 适合快速体验和学习测试
+- 在系统设置中直接选择即可使用
 
 ## 🏗️ 项目架构
 
