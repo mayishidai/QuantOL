@@ -13,23 +13,40 @@ class BacktestConfigUI:
         """渲染日期配置UI"""
         st.subheader("📅 回测日期范围")
 
+        # 获取动态 key 后缀（用于在加载配置后强制刷新 widget）
+        key_suffix = self.session_state.get('_date_key_suffix', '')
+
+        # 获取日期值（优先从加载配置的临时标记获取）
+        if '_load_start_date' in self.session_state:
+            start_value = pd.to_datetime(self.session_state._load_start_date)
+            del self.session_state._load_start_date
+        else:
+            start_value = pd.to_datetime(self.session_state.backtest_config.start_date)
+
+        if '_load_end_date' in self.session_state:
+            end_value = pd.to_datetime(self.session_state._load_end_date)
+            del self.session_state._load_end_date
+        else:
+            end_value = pd.to_datetime(self.session_state.backtest_config.end_date)
+
+        # 使用动态 key 和 value 参数
         col1, col2 = st.columns(2)
         with col1:
             start_date = st.date_input(
                 "开始日期",
-                value=pd.to_datetime(self.session_state.backtest_config.start_date),
-                key="backtest_start_date"
+                value=start_value,
+                key=f"backtest_start_date_{key_suffix}"
             )
         with col2:
             end_date = st.date_input(
                 "结束日期",
-                value=pd.to_datetime(self.session_state.backtest_config.end_date),
-                key="backtest_end_date"
+                value=end_value,
+                key=f"backtest_end_date_{key_suffix}"
             )
 
-        # 更新配置
-        self.session_state.backtest_config.start_date = start_date.strftime('%Y-%m-%d')
-        self.session_state.backtest_config.end_date = end_date.strftime('%Y-%m-%d')
+        # 更新配置（使用 %Y%m%d 格式，与 BacktestConfig 内部格式一致）
+        self.session_state.backtest_config.start_date = start_date.strftime('%Y%m%d')
+        self.session_state.backtest_config.end_date = end_date.strftime('%Y%m%d')
 
     def render_frequency_config_ui(self) -> None:
         """渲染频率配置UI"""
@@ -54,6 +71,9 @@ class BacktestConfigUI:
         """渲染股票选择UI，返回选中的股票列表"""
         st.subheader("📈 选择交易标的")
 
+        # 获取动态 key 后缀（用于在加载配置后强制刷新 widget）
+        key_suffix = self.session_state.get('_stock_key_suffix', '')
+
         col1, col2 = st.columns([3, 1])
         selected_options = []
 
@@ -71,13 +91,29 @@ class BacktestConfigUI:
                         st.error(f"加载股票列表失败: {e}")
                         self.session_state.stock_cache = []
 
+            # 获取默认值（从加载的配置或当前配置）
+            if '_load_symbols' in self.session_state:
+                default_symbols = self.session_state._load_symbols
+                del self.session_state._load_symbols
+            else:
+                default_symbols = self.session_state.backtest_config.target_symbols
+
+            # 将股票代码转换为 (code, name) 格式用于显示
+            default_options = []
+            if self.session_state.stock_cache:
+                available_codes = {code: name for code, name in self.session_state.stock_cache}
+                for symbol in default_symbols:
+                    if symbol in available_codes:
+                        default_options.append((symbol, available_codes[symbol]))
+
             # 多选股票组件
             if self.session_state.stock_cache:
                 selected_options = st.multiselect(
                     "选择股票（可多选）",
                     options=self.session_state.stock_cache,
                     format_func=lambda x: x[1],
-                    key="selected_stocks",
+                    default=default_options,
+                    key=f"selected_stocks_{key_suffix}",
                     help="注意：不需要选择指数标的，部分股票可能缺少历史数据，建议选择个股进行分析"
                 )
             else:
