@@ -8,7 +8,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { useRequireAuth } from "@/lib/store";
 import { useApi, BacktestConfig as ApiBacktestConfig } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -189,7 +188,6 @@ function CollapsibleCard({ id, title, activeCard, onCardClick, children }: Colla
 
 export default function BacktestPage() {
   const t = useTranslations('backtest')
-  const { user, isLoading, token, logout } = useRequireAuth();
   const {
     getStocks,
     runBacktest,
@@ -231,7 +229,6 @@ export default function BacktestPage() {
   // Stock selection state
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [stockSearch, setStockSearch] = useState("");
-  const [isLoadingStocks, setIsLoadingStocks] = useState(false);
   const [selectedStocks, setSelectedStocks] = useState<Set<string>>(new Set());
 
   // Card collapse state - track which card is currently active
@@ -402,7 +399,6 @@ export default function BacktestPage() {
   }, [debouncedSearch]);
 
   const searchStocks = async (search: string) => {
-    setIsLoadingStocks(true);
     try {
       const response = await getStocks(search, 100);
       if (response.success && response.data) {
@@ -410,8 +406,6 @@ export default function BacktestPage() {
       }
     } catch (error) {
       console.error("Failed to search stocks:", error);
-    } finally {
-      setIsLoadingStocks(false);
     }
   };
 
@@ -1195,16 +1189,6 @@ export default function BacktestPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500" />
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Toast Notification */}
@@ -1248,13 +1232,7 @@ export default function BacktestPage() {
           <div className="flex items-center gap-4">
             <ThemeSwitcher />
             <CoffeeModal />
-            <UserAccountMenu
-              username={user.username}
-              onLogout={async () => {
-                await logout();
-                window.location.href = "/login";
-              }}
-            />
+            <UserAccountMenu />
           </div>
         </div>
       </header>
@@ -1369,11 +1347,7 @@ export default function BacktestPage() {
                 />
 
                 <div className="max-h-48 overflow-y-auto space-y-1">
-                  {isLoadingStocks ? (
-                    <div className="text-center py-4">
-                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500" />
-                    </div>
-                  ) : stocks.length === 0 ? (
+                  {stocks.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground text-sm">
                       {stockSearch.length === 0
                         ? "请输入股票代码或名称进行搜索"

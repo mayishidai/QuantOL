@@ -8,7 +8,6 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useRequireAuth } from "@/lib/store";
 import { useApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,7 +31,6 @@ interface BacktestHistoryItem {
 
 export default function BacktestHistoryPage() {
   const t = useTranslations('backtest');
-  const { user, isLoading } = useRequireAuth();
   const {
     getBacktestHistory,
     getBacktestDetail,
